@@ -13,5 +13,10 @@ def create_embedding_provider(settings: EmbeddingProviderSettings) -> EmbeddingP
         from mcp_server_qdrant.embeddings.fastembed import FastEmbedProvider
 
         return FastEmbedProvider(settings.model_name)
-    else:
-        raise ValueError(f"Unsupported embedding provider: {settings.provider_type}")
+    if settings.provider_type == EmbeddingProviderType.LLAMACPP:
+        from mcp_server_qdrant.embeddings.llamacpp import LlamaCppProvider
+
+        if not settings.llamacpp_base_url:
+            raise ValueError("LLAMACPP_BASE_URL is required for llamacpp provider")
+        return LlamaCppProvider(settings.llamacpp_base_url, settings.model_name)
+    raise ValueError(f"Unsupported embedding provider: {settings.provider_type}")
