@@ -46,6 +46,10 @@ class EmbeddingProviderSettings(BaseSettings):
         default="sentence-transformers/all-MiniLM-L6-v2",
         validation_alias="EMBEDDING_MODEL",
     )
+    llamacpp_base_url: str | None = Field(
+        default=None,
+        validation_alias="LLAMACPP_BASE_URL",
+    )
 
 
 class FilterableField(BaseModel):
