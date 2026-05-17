@@ -41,18 +41,19 @@ Configuration is done via environment variables. The only command-line argument 
 > [!NOTE]
 > You cannot provide both `QDRANT_URL` and `QDRANT_LOCAL_PATH` at the same time.
 
-| Name                     | Description                                                         | Default Value                                                     |
-|--------------------------|---------------------------------------------------------------------|-------------------------------------------------------------------|
-| `QDRANT_URL`             | URL of the Qdrant server                                            | None                                                              |
-| `QDRANT_API_KEY`         | API key for the Qdrant server                                       | None                                                              |
-| `COLLECTION_NAME`        | Name of the default collection to use.                              | None                                                              |
-| `QDRANT_LOCAL_PATH`      | Path to the local Qdrant database (alternative to `QDRANT_URL`)     | None                                                              |
-| `EMBEDDING_PROVIDER`     | Embedding provider to use (currently only "fastembed" is supported) | `fastembed`                                                       |
-| `EMBEDDING_MODEL`        | Name of the embedding model to use                                  | `sentence-transformers/all-MiniLM-L6-v2`                          |
-| `TOOL_STORE_DESCRIPTION` | Custom description for the store tool                               | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
-| `TOOL_FIND_DESCRIPTION`  | Custom description for the find tool                                | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
-| `QDRANT_SEARCH_LIMIT`    | Maximum number of results to return from search                     | `10`                                                              |
-| `QDRANT_READ_ONLY`       | Enable read-only mode (disables `qdrant-store` tool)                | `false`                                                           |
+| Name                     | Description                                                                           | Default Value                                                     |
+|--------------------------|---------------------------------------------------------------------------------------|-------------------------------------------------------------------|
+| `QDRANT_URL`             | URL of the Qdrant server                                                              | None                                                              |
+| `QDRANT_API_KEY`         | API key for the Qdrant server                                                         | None                                                              |
+| `COLLECTION_NAME`        | Name of the default collection to use.                                                | None                                                              |
+| `QDRANT_LOCAL_PATH`      | Path to the local Qdrant database (alternative to `QDRANT_URL`)                       | None                                                              |
+| `EMBEDDING_PROVIDER`     | Embedding provider to use (`fastembed` or `llamacpp`)                                 | `fastembed`                                                       |
+| `EMBEDDING_MODEL`        | Name of the embedding model to use                                                    | `sentence-transformers/all-MiniLM-L6-v2`                          |
+| `LLAMACPP_BASE_URL`      | Base URL for OpenAI-compatible llama.cpp server (required for `llamacpp` provider)    | None                                                              |
+| `TOOL_STORE_DESCRIPTION` | Custom description for the store tool                                                 | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
+| `TOOL_FIND_DESCRIPTION`  | Custom description for the find tool                                                  | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
+| `QDRANT_SEARCH_LIMIT`    | Maximum number of results to return from search                                       | `10`                                                              |
+| `QDRANT_READ_ONLY`       | Enable read-only mode (disables `qdrant-store` tool)                                  | `false`                                                           |
 
 ### FastMCP Environment Variables
 
@@ -83,6 +84,38 @@ When using [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools) no spe
 QDRANT_URL="http://localhost:6333" \
 COLLECTION_NAME="my-collection" \
 EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2" \
+uvx mcp-server-qdrant
+```
+
+### Manual installation
+
+```shell
+# Clone the repository
+
+git clone https://github.com/Symb0x76/mcp-server-qdrant.git
+cd mcp-server-qdrant
+
+# (Recommended) create a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -e .
+
+# Run the server
+QDRANT_URL="http://localhost:6333" \
+COLLECTION_NAME="my-collection" \
+python -m mcp_server_qdrant.main
+```
+
+### llama.cpp (OpenAI-compatible embeddings)
+
+```shell
+QDRANT_URL="http://localhost:6333" \
+COLLECTION_NAME="my-collection" \
+EMBEDDING_PROVIDER="llamacpp" \
+EMBEDDING_MODEL="your-embedding-model" \
+LLAMACPP_BASE_URL="http://localhost:8080" \
 uvx mcp-server-qdrant
 ```
 
@@ -182,7 +215,7 @@ For local Qdrant mode:
 This MCP server will automatically create a collection with the specified name if it doesn't exist.
 
 By default, the server will use the `sentence-transformers/all-MiniLM-L6-v2` embedding model to encode memories.
-For the time being, only [FastEmbed](https://qdrant.github.io/fastembed/) models are supported.
+FastEmbed and OpenAI-compatible llama.cpp embeddings are supported.
 
 ## Support for other tools
 
@@ -258,7 +291,7 @@ existing codebase.
     -e QDRANT_URL="http://localhost:6333" \
     -e COLLECTION_NAME="code-repository" \
     -e EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2" \
-    -e TOOL_STORE_DESCRIPTION="Store code snippets with descriptions. The 'information' parameter should contain a natural language description of what the code does, while the actual code should be included in the 'metadata' parameter as a 'code' property." \
+    -e TOOL_STORE_DESCRIPTION="Store code snippets with descriptions. The 'information' parameter should contain a natural language description of what the code does, while the actual code should[...]
     -e TOOL_FIND_DESCRIPTION="Search for relevant code snippets using natural language. The 'query' parameter should describe the functionality you're looking for." \
     -- uvx mcp-server-qdrant
     ```
@@ -291,9 +324,9 @@ COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
 
 For one-click installation, click one of the install buttons below:
 
-[![Install with UVX in VS Code](https://img.shields.io/badge/VS_Code-UVX-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with UVX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-UVX-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
+[![Install with UVX in VS Code](https://img.shields.io/badge/VS_Code-UVX-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdr[...]
 
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-p%22%2C%228000%3A8000%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-p%22%2C%228000%3A8000%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
+[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?na[...]
 
 #### Manual Installation
 
